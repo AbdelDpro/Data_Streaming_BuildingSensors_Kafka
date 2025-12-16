@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Spark / Streaming
+checkpoints/
+*.parquet
+*.snappy.parquet
+
+# OS
+.DS_Store
+.Zone.Identifier
+
+# IDE
+.vscode/
