@@ -6,6 +6,7 @@ KAFKA_BROKER = 'localhost:9092'
 KAFKA_TOPIC = 'iot_sensors_raw'
 DELTA_LAKE_PATH = '/home/abdeldpro/cours/Esther_brief/Analyse_flux_data_kafka/data/silver/iot_data'
 
+# J'initialise ma session Spark avec les dépendances Kafka et Delta
 spark = SparkSession.builder \
     .appName("KafkaToDeltaStreaming") \
     .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,io.delta:delta-core_2.12:2.4.0") \
@@ -15,6 +16,7 @@ spark = SparkSession.builder \
 
 spark.sparkContext.setLogLevel("ERROR")
 
+# Je définis la structure attendue de mes données pour le parsing
 schema = StructType([
     StructField("timestamp", StringType(), True), 
     StructField("device_id", StringType(), True),
@@ -25,6 +27,7 @@ schema = StructType([
     StructField("unit", StringType(), True),
 ])
 
+# Je configure la lecture du flux depuis le broker Kafka
 df_raw = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", KAFKA_BROKER) \
@@ -32,6 +35,7 @@ df_raw = spark.readStream \
     .option("startingOffsets", "earliest") \
     .load()
 
+# J'extrais, je transforme et je nettoie les données
 df_processed = df_raw \
     .selectExpr("CAST(value AS STRING) as json_value", "timestamp as kafka_ingest_time") \
     .withColumn("data", from_json(col("json_value"), schema)) \
@@ -50,6 +54,7 @@ df_processed = df_raw \
     ) \
     .filter(col("sensor_value").isNotNull())
 
+# Je lance l'écriture continue vers la destination Delta Lake
 query = df_processed.writeStream \
     .format("delta") \
     .outputMode("append") \

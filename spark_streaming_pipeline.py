@@ -6,9 +6,8 @@ print("=" * 60)
 print("DÉMARRAGE DU PIPELINE DE STREAMING")
 print("=" * 60)
 
-# ÉTAPE 1 : Configuration Spark avec Delta Lake
+# Je configure mon environnement Spark avec les extensions Delta Lake nécessaires
 print("\n Configuration de Spark avec Delta Lake...")
-
 spark = SparkSession.builder \
     .appName("IoT Building Sensors - Bronze Layer") \
     .config("spark.jars.packages", "io.delta:delta-core_2.12:2.4.0") \
@@ -16,10 +15,12 @@ spark = SparkSession.builder \
     .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
     .getOrCreate()
 
+# Je réduis le "volume" de messages de la console pour ne voir que les avertissements importants
+# (Si je mettais "INFO" j'aurais tout, "ERROR" je n'aurais que les pannes totales, "WARN" est le juste milieu.
 spark.sparkContext.setLogLevel("WARN")
 print("Spark initialisé avec succès")
 
-# ÉTAPE 2 : Définir le schéma EXACT de vos données JSON
+# Je définis la structure que mes données JSON entrantes devront respecter
 print("\n Définition du schéma des données...")
 
 schema = StructType([
@@ -34,17 +35,16 @@ schema = StructType([
 
 print("Schéma défini (capteurs IoT)")
 
-# ÉTAPE 3 : Lire le flux de données JSON
+# Lecture du flux de données JSON. Je branche Spark sur le dossier d'entrée pour surveiller l'arrivée de nouveaux fichiers
 print("\n Lecture du flux JSON depuis data/input/...")
-
 df_stream = spark.readStream \
     .schema(schema) \
     .option("maxFilesPerTrigger", 1) \
     .json("data/input")
-
 print("Flux de lecture configuré")
 
-# ÉTAPE 4 : Transformations (nettoyage, filtrage, projection)
+# Je supprime les nuls et les valeurs abherrantes (négatives)
+# Je calcule le niveau d'alerte selon les règles métier
 print("\nApplication des transformations...")
 
 df_cleaned = df_stream \
@@ -85,7 +85,7 @@ print("      • Niveau d'alerte (température > 28°C, CO2 > 1000ppm)")
 print("      • Identifiant bâtiment-étage (ex: A-2)")
 print("      • Timestamp d'ingestion")
 
-# ÉTAPE 5 : Écrire dans Delta Lake (Bronze Layer)
+# J'écris mes résultats dans la table Delta Bronze toutes les 10 secondes. Le moteur de streaming est lancé.
 print("\n Configuration de l'écriture dans Delta Lake (Bronze)...")
 
 query = df_cleaned.writeStream \
@@ -110,7 +110,7 @@ print(f"Spark UI      : http://localhost:4040")
 print("=" * 60)
 print("\nPour arrêter le pipeline : Ctrl+C\n")
 
-# ÉTAPE 6 : Attendre la fin du streaming
+# J'attends que le flux se termine (OU que je l'arrête manuellement)
 try:
     query.awaitTermination()
 except KeyboardInterrupt:

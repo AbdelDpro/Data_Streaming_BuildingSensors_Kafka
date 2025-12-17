@@ -18,7 +18,7 @@ services:
       KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
 
-  # spark: MIS EN LOCAL CAR PB D'IMAGE AVEC DOCKER
+  # spark: FINALEMENT J'AI MIS EN LOCAL CETTE PARTIE CAR PB D'IMAGE AVEC DOCKER
   #   image: apache/spark-py:v3.5.0
   #   container_name: spark-streaming
   #   user: root
